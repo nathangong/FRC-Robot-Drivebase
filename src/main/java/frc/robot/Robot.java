@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.loops.Looper;
 import frc.robot.subsystems.Drive;
 
 /**
@@ -21,6 +22,11 @@ import frc.robot.subsystems.Drive;
  * project.
  */
 public class Robot extends TimedRobot {
+  Looper mEnabledLooper = new Looper();
+  Looper mDisabledLooper = new Looper();
+
+  SubsystemManager mSubsystemManager = SubsystemManager.getInstance();
+  
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
@@ -32,7 +38,7 @@ public class Robot extends TimedRobot {
   private Joystick throttleJoystick = new Joystick(throttleJoystickID);
   private Joystick turnJoystick = new Joystick(turnJoystickID);
 
-  private Drive drive = new Drive();
+  private Drive drive = Drive.getInstance();
 
   /**
    * This function is run when the robot is first started up and should be
@@ -40,6 +46,9 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
+    mSubsystemManager.registerEnabledLoops(mEnabledLooper);
+    mSubsystemManager.registerDisabledLoops(mDisabledLooper);
+
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
@@ -73,7 +82,8 @@ public class Robot extends TimedRobot {
     m_autoSelected = m_chooser.getSelected();
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
-    drive.stop();
+    mDisabledLooper.stop();
+    mEnabledLooper.start();
   }
 
   /**
@@ -102,6 +112,12 @@ public class Robot extends TimedRobot {
     drive.setOpenLoop(throttle, turn);
   }
 
+  @Override
+  public void teleopInit() {
+    mDisabledLooper.stop();
+    mEnabledLooper.start();
+  }
+
   /**
    * This function is called periodically during test mode.
    */
@@ -116,6 +132,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledInit() {
-    drive.stop();
+    mEnabledLooper.stop();
+    mDisabledLooper.start();
   }
 }

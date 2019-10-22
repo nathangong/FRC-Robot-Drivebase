@@ -5,34 +5,65 @@ import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
-public class Drive {
+public class Drive extends Subsystem {
     private final int rightMasterID = 0;
     private final int leftMasterID = 1;
     private final int rightSlaveID = 2;
     private final int leftSlaveID = 3;
 
-    private TalonSRX rightMaster, leftMaster, rightSlave, leftSlave;
+    private TalonSRX mRightMaster, mLeftMaster, mRightSlave, mLeftSlave;
+
+    private static Drive mInstance = null;
+
+    private PeriodicIO mPeriodicIO;
 
     public Drive() {
-        rightMaster = new TalonSRX(rightMasterID);
-        leftMaster = new TalonSRX(leftMasterID);
-        rightSlave = new TalonSRX(rightSlaveID);
-        leftSlave = new TalonSRX(leftSlaveID);
+        mPeriodicIO = new PeriodicIO();
 
-        rightSlave.set(ControlMode.Follower, rightMasterID);
-        leftSlave.set(ControlMode.Follower, leftMasterID);
+        mRightMaster = new TalonSRX(rightMasterID);
+        mLeftMaster = new TalonSRX(leftMasterID);
+        mRightSlave = new TalonSRX(rightSlaveID);
+        mLeftSlave = new TalonSRX(leftSlaveID);
 
-        rightMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 1000);
-        leftMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Absolute, 0, 1000);
+        mRightSlave.set(ControlMode.Follower, rightMasterID);
+        mLeftSlave.set(ControlMode.Follower, leftMasterID);
+
+        mRightMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 1000);
+        mLeftMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Absolute, 0, 1000);
+    }
+
+    public static Drive getInstance() {
+        if (mInstance == null) {
+            mInstance = new Drive();
+        }
+        return mInstance;
+    }
+
+    public static class PeriodicIO {
+        double right_demand;
+        double left_demand;
+    }
+
+    public void writePeriodicOutputs() {
+        mLeftMaster.set(ControlMode.PercentOutput, mPeriodicIO.left_demand);
+        mRightMaster.set(ControlMode.PercentOutput, mPeriodicIO.right_demand);
+    }
+
+    public boolean checkSystem() {
+        return true;
     }
     
     public void setOpenLoop(double throttle, double turn) {
-        rightMaster.set(ControlMode.PercentOutput, throttle + turn);
-        leftMaster.set(ControlMode.PercentOutput, throttle - turn);
+        mPeriodicIO.right_demand = throttle + turn;
+        mPeriodicIO.left_demand = throttle - turn;
+    }
+    
+    public void outputTelemetry() {
+
     }
 
     public void stop() {
-        rightMaster.setNeutralMode(NeutralMode.Brake);
-        leftMaster.setNeutralMode(NeutralMode.Brake);
+        mRightMaster.setNeutralMode(NeutralMode.Brake);
+        mLeftMaster.setNeutralMode(NeutralMode.Brake);
     }
 }

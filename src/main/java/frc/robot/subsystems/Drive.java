@@ -5,11 +5,9 @@ import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
+import frc.robot.Constants;
+
 public class Drive extends Subsystem {
-    private final int rightMasterID = 0;
-    private final int leftMasterID = 1;
-    private final int rightSlaveID = 2;
-    private final int leftSlaveID = 3;
 
     private TalonSRX mRightMaster, mLeftMaster, mRightSlave, mLeftSlave;
 
@@ -20,13 +18,13 @@ public class Drive extends Subsystem {
     public Drive() {
         mPeriodicIO = new PeriodicIO();
 
-        mRightMaster = new TalonSRX(rightMasterID);
-        mLeftMaster = new TalonSRX(leftMasterID);
-        mRightSlave = new TalonSRX(rightSlaveID);
-        mLeftSlave = new TalonSRX(leftSlaveID);
+        mRightMaster = new TalonSRX(Constants.kRightMasterID);
+        mLeftMaster = new TalonSRX(Constants.kLeftMasterID);
+        mRightSlave = new TalonSRX(Constants.kRightSlaveID);
+        mLeftSlave = new TalonSRX(Constants.kLeftSlaveID);
 
-        mRightSlave.set(ControlMode.Follower, rightMasterID);
-        mLeftSlave.set(ControlMode.Follower, leftMasterID);
+        mRightSlave.set(ControlMode.Follower, Constants.kRightMasterID);
+        mLeftSlave.set(ControlMode.Follower, Constants.kLeftMasterID);
 
         mRightMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 1000);
         mLeftMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Absolute, 0, 1000);
@@ -56,6 +54,16 @@ public class Drive extends Subsystem {
     public void setOpenLoop(double throttle, double turn) {
         mPeriodicIO.right_demand = throttle + turn;
         mPeriodicIO.left_demand = throttle - turn;
+
+        if (throttle == 0) {
+            mPeriodicIO.right_demand = 0;
+            mPeriodicIO.left_demand = 0;
+        }
+
+        if (Math.abs(mPeriodicIO.right_demand) > 1.0 || Math.abs(mPeriodicIO.left_demand) > 1.0) {
+            mPeriodicIO.right_demand /= Math.max(Math.abs(mPeriodicIO.right_demand), Math.abs(mPeriodicIO.left_demand));
+            mPeriodicIO.left_demand /= Math.max(Math.abs(mPeriodicIO.right_demand), Math.abs(mPeriodicIO.left_demand));
+        }
     }
     
     public void outputTelemetry() {

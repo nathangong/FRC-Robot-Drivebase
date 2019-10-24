@@ -18,6 +18,11 @@ package frc.robot;
 public class Constants {
     public static final double kLooperDt = 0.01;
 
+    public static final int kRightMasterID = 0;
+    public static final int kLeftMasterID = 1;
+    public static final int kRightSlaveID = 2;
+    public static final int kLeftSlaveID = 3;
+
     // wheels
     // Tuned 3/26/19
     // public static final double kDriveWheelTrackWidthInches = 25.42;

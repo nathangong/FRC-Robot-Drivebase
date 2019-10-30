@@ -6,16 +6,22 @@ import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 import frc.robot.Constants;
+import frc.lib.util.CheesyDriveHelper;
+import frc.lib.util.DriveSignal;
 
 public class Drive extends Subsystem {
 
     private TalonSRX mRightMaster, mLeftMaster, mRightSlave, mLeftSlave;
 
-    private static Drive mInstance = null;
+    private static Drive mInstance;
 
     private PeriodicIO mPeriodicIO;
+    
+    private CheesyDriveHelper mCheesyDriveHelper;
+    private boolean mIsHighGear;
+    private boolean mIsQuickTurn;
 
-    public Drive() {
+    private Drive() {
         mPeriodicIO = new PeriodicIO();
 
         mRightMaster = new TalonSRX(Constants.kRightMasterID);
@@ -28,6 +34,10 @@ public class Drive extends Subsystem {
 
         mRightMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 1000);
         mLeftMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Absolute, 0, 1000);
+
+        mCheesyDriveHelper = new CheesyDriveHelper();
+        mIsHighGear = false;
+        mIsQuickTurn = false;
     }
 
     public static Drive getInstance() {
@@ -52,18 +62,9 @@ public class Drive extends Subsystem {
     }
     
     public void setOpenLoop(double throttle, double turn) {
-        mPeriodicIO.right_demand = throttle + turn;
-        mPeriodicIO.left_demand = throttle - turn;
-
-        if (throttle == 0) {
-            mPeriodicIO.right_demand = 0;
-            mPeriodicIO.left_demand = 0;
-        }
-
-        if (Math.abs(mPeriodicIO.right_demand) > 1.0 || Math.abs(mPeriodicIO.left_demand) > 1.0) {
-            mPeriodicIO.right_demand /= Math.max(Math.abs(mPeriodicIO.right_demand), Math.abs(mPeriodicIO.left_demand));
-            mPeriodicIO.left_demand /= Math.max(Math.abs(mPeriodicIO.right_demand), Math.abs(mPeriodicIO.left_demand));
-        }
+        DriveSignal driveSignal = mCheesyDriveHelper.cheesyDrive(throttle, turn, mIsQuickTurn, mIsHighGear);
+        mPeriodicIO.right_demand = driveSignal.getRight();
+        mPeriodicIO.left_demand = driveSignal.getLeft();
     }
     
     public void outputTelemetry() {
@@ -73,5 +74,13 @@ public class Drive extends Subsystem {
     public void stop() {
         mRightMaster.setNeutralMode(NeutralMode.Brake);
         mLeftMaster.setNeutralMode(NeutralMode.Brake);
+    }
+
+    public boolean isHighGear() {
+        return mIsHighGear;
+    }
+
+    public boolean isQuickTurn() {
+        return mIsQuickTurn;
     }
 }

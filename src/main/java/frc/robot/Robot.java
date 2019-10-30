@@ -32,13 +32,10 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  private final int throttleJoystickID = 0;
-  private final int turnJoystickID = 1;
+  private Joystick throttleJoystick;
+  private Joystick turnJoystick;
 
-  private Joystick throttleJoystick = new Joystick(throttleJoystickID);
-  private Joystick turnJoystick = new Joystick(turnJoystickID);
-
-  private Drive drive = Drive.getInstance();
+  private Drive mDrive;
 
   /**
    * This function is run when the robot is first started up and should be
@@ -46,6 +43,12 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
+    mDrive = Drive.getInstance();
+    mSubsystemManager.setSubsystems(mDrive);
+
+    throttleJoystick = new Joystick(Constants.kThrottleJoystickID);
+    turnJoystick = new Joystick(Constants.kTurnJoystickID);
+
     mSubsystemManager.registerEnabledLoops(mEnabledLooper);
     mSubsystemManager.registerDisabledLoops(mDisabledLooper);
 
@@ -109,7 +112,7 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
     double throttle = throttleJoystick.getRawAxis(1);
     double turn = turnJoystick.getRawAxis(0);
-    drive.setOpenLoop(throttle, turn);
+    mDrive.setOpenLoop(throttle, turn);
   }
 
   @Override
@@ -127,7 +130,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testInit() {
-    drive.stop();
+    mDrive.stop();
   }
 
   @Override

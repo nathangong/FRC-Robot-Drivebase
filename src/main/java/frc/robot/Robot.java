@@ -7,10 +7,7 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.loops.Looper;
 import frc.robot.subsystems.Drive;
 
@@ -22,18 +19,11 @@ import frc.robot.subsystems.Drive;
  * project.
  */
 public class Robot extends TimedRobot {
-  Looper mEnabledLooper = new Looper();
-  Looper mDisabledLooper = new Looper();
+  private Looper mEnabledLooper = new Looper();
+  private Looper mDisabledLooper = new Looper();
 
   SubsystemManager mSubsystemManager = SubsystemManager.getInstance();
-  
-  private static final String kDefaultAuto = "Default";
-  private static final String kCustomAuto = "My Auto";
-  private String m_autoSelected;
-  private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  private Joystick throttleJoystick;
-  private Joystick turnJoystick;
 
   private Drive mDrive;
 
@@ -46,15 +36,8 @@ public class Robot extends TimedRobot {
     mDrive = Drive.getInstance();
     mSubsystemManager.setSubsystems(mDrive);
 
-    throttleJoystick = new Joystick(Constants.kThrottleJoystickID);
-    turnJoystick = new Joystick(Constants.kTurnJoystickID);
-
     mSubsystemManager.registerEnabledLoops(mEnabledLooper);
     mSubsystemManager.registerDisabledLoops(mDisabledLooper);
-
-    m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
-    m_chooser.addOption("My Auto", kCustomAuto);
-    SmartDashboard.putData("Auto choices", m_chooser);
   }
 
   /**
@@ -82,9 +65,8 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
-    m_autoSelected = m_chooser.getSelected();
-    // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-    System.out.println("Auto selected: " + m_autoSelected);
+    mDrive.stop();
+    
     mDisabledLooper.stop();
     mEnabledLooper.start();
   }
@@ -94,15 +76,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousPeriodic() {
-    switch (m_autoSelected) {
-      case kCustomAuto:
-        // Put custom auto code here
-        break;
-      case kDefaultAuto:
-      default:
-        // Put default auto code here
-        break;
-    }
+
   }
 
   /**
@@ -110,9 +84,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopPeriodic() {
-    double throttle = throttleJoystick.getRawAxis(1);
-    double turn = turnJoystick.getRawAxis(0);
-    mDrive.setOpenLoop(throttle, turn);
+    
   }
 
   @Override
@@ -135,6 +107,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledInit() {
+    mDrive.stop();
+
     mEnabledLooper.stop();
     mDisabledLooper.start();
   }

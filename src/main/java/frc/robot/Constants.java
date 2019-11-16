@@ -28,11 +28,11 @@ public class Constants {
 
     // wheels
     // Tuned 3/26/19
-    // public static final double kDriveWheelTrackWidthInches = 25.42;
+    public static final double kDriveWheelTrackWidthInches = 25.42;
     // public static final double kDriveWheelDiameterInches = 3.938;
     // public static final double kDriveWheelRadiusInches = kDriveWheelDiameterInches / 2.0;
     // public static final double kDriveWheelTrackRadiusWidthMeters = kDriveWheelTrackWidthInches / 2.0 * 0.0254;
-    // public static final double kTrackScrubFactor = 1.0469745223;
+    public static final double kTrackScrubFactor = 1.0469745223;
 
     // // tuned dynamics
     // public static final double kDriveLinearVIntercept = 0.1801; // V

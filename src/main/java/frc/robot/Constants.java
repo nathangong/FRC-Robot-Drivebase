@@ -23,8 +23,7 @@ public class Constants {
     public static final int kRightSlaveID = 2;
     public static final int kLeftSlaveID = 3;
 
-    public static final int kThrottleJoystickID = 0;
-    public static final int kTurnJoystickID = 1;
+    public static final int kXboxControllerPort = 0;
 
     // wheels
     // Tuned 3/26/19

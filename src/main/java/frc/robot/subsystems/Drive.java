@@ -1,9 +1,10 @@
 package frc.robot.subsystems;
 
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMaxLowLevel;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 
 import frc.robot.Constants;
 import frc.robot.Kinematics;
@@ -13,7 +14,7 @@ import frc.lib.util.Util;
 
 public class Drive extends Subsystem {
 
-    private CANSparkMax mRightMaster, mLeftMaster, mRightSlave, mLeftSlave;
+    private TalonSRX mRightMaster, mLeftMaster, mRightSlave, mLeftSlave;
 
     private static Drive mInstance;
 
@@ -27,13 +28,13 @@ public class Drive extends Subsystem {
     private Drive() {
         mPeriodicIO = new PeriodicIO();
 
-        mRightMaster = new CANSparkMax(Constants.kRightMasterID, CANSparkMaxLowLevel.MotorType.kBrushless);
-        mLeftMaster = new CANSparkMax(Constants.kLeftMasterID, CANSparkMaxLowLevel.MotorType.kBrushless);
-        mRightSlave = new CANSparkMax(Constants.kRightSlaveID, CANSparkMaxLowLevel.MotorType.kBrushless);
-        mLeftSlave = new CANSparkMax(Constants.kLeftSlaveID, CANSparkMaxLowLevel.MotorType.kBrushless);
+        mRightMaster = new TalonSRX(Constants.kRightMasterID);
+        mLeftMaster = new TalonSRX(Constants.kLeftMasterID);
+        mRightSlave = new TalonSRX(Constants.kRightSlaveID);
+        mLeftSlave = new TalonSRX(Constants.kLeftSlaveID);
 
-        mRightSlave.follow(mRightMaster);
-        mLeftSlave.follow(mLeftMaster);
+        mRightSlave.set(ControlMode.Follower, Constants.kRightMasterID);
+        mLeftSlave.set(ControlMode.Follower, Constants.kLeftMasterID);
 
         mController = new XboxController(Constants.kXboxControllerPort);
 
@@ -61,8 +62,8 @@ public class Drive extends Subsystem {
     }
 
     public void writePeriodicOutputs() {
-        mLeftMaster.set(mPeriodicIO.left_demand);
-        mRightMaster.set(mPeriodicIO.right_demand);
+        mLeftMaster.set(ControlMode.PercentOutput, mPeriodicIO.left_demand);
+        mRightMaster.set(ControlMode.PercentOutput, mPeriodicIO.right_demand);
     }
 
     public boolean checkSystem() {
@@ -104,8 +105,8 @@ public class Drive extends Subsystem {
     }
 
     public void stop() {
-        mRightMaster.set(0);
-        mLeftMaster.set(0);
+        mRightMaster.setNeutralMode(NeutralMode.Coast);
+        mLeftMaster.setNeutralMode(NeutralMode.Coast);
     }
 
     public boolean isHighGear() {

@@ -1,7 +1,5 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.GenericHID.Hand;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
@@ -15,11 +13,6 @@ public class Drive extends Subsystem {
     private static Drive mInstance;
 
     private PeriodicIO mPeriodicIO;
-    
-    private boolean mIsHighGear;
-    private boolean mIsQuickTurn;
-
-    private XboxController mController;
 
     private Drive() {
         mPeriodicIO = new PeriodicIO();
@@ -29,16 +22,14 @@ public class Drive extends Subsystem {
         mRightSlave = new TalonSRX(Constants.kRightSlaveID);
         mLeftSlave = new TalonSRX(Constants.kLeftSlaveID);
 
+        mRightMaster.setNeutralMode(NeutralMode.Coast);
+        mLeftMaster.setNeutralMode(NeutralMode.Coast);
+
         mRightSlave.set(ControlMode.Follower, Constants.kRightMasterID);
         mLeftSlave.set(ControlMode.Follower, Constants.kLeftMasterID);
-
-        mController = new XboxController(Constants.kXboxControllerPort);
-
-        mIsHighGear = false;
-        mIsQuickTurn = false;
     }
 
-    public static Drive getInstance() {
+    public synchronized static Drive getInstance() {
         if (mInstance == null) {
             mInstance = new Drive();
         }
@@ -52,12 +43,10 @@ public class Drive extends Subsystem {
 
     @Override
     public void readPeriodicInputs() {
-        double throttle = mController.getY(Hand.kLeft);
-        double turn = mController.getX(Hand.kRight);
-        mIsQuickTurn = mController.getTriggerAxis(Hand.kRight) > 0.5;
-        setOpenLoop(throttle, turn);
+        
     }
 
+    @Override
     public void writePeriodicOutputs() {
         mLeftMaster.set(ControlMode.PercentOutput, mPeriodicIO.left_demand);
         mRightMaster.set(ControlMode.PercentOutput, mPeriodicIO.right_demand);
@@ -66,12 +55,13 @@ public class Drive extends Subsystem {
     public boolean checkSystem() {
         return true;
     }
+
     
-    public void setOpenLoop(double throttle, double turn) {
+    public synchronized void setOpenLoop(double throttle, double turn, boolean isQuickTurn) {
         mPeriodicIO.right_demand = throttle + turn;
         mPeriodicIO.left_demand = throttle - turn;
 
-        if (throttle == 0 && !mIsQuickTurn) {
+        if (throttle == 0 && !isQuickTurn) {
             mPeriodicIO.right_demand = 0;
             mPeriodicIO.left_demand = 0;
         }
@@ -83,19 +73,10 @@ public class Drive extends Subsystem {
     }
     
     public void outputTelemetry() {
-
     }
 
     public void stop() {
         mLeftMaster.set(ControlMode.PercentOutput, 0);
         mRightMaster.set(ControlMode.PercentOutput, 0);
-    }
-
-    public boolean isHighGear() {
-        return mIsHighGear;
-    }
-
-    public boolean isQuickTurn() {
-        return mIsQuickTurn;
     }
 }

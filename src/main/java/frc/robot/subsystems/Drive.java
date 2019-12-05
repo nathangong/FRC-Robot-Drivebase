@@ -7,10 +7,6 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 
 import frc.robot.Constants;
-import frc.robot.Kinematics;
-import frc.lib.geometry.Twist2d;
-import frc.lib.util.DriveSignal;
-import frc.lib.util.Util;
 
 public class Drive extends Subsystem {
 
@@ -58,7 +54,8 @@ public class Drive extends Subsystem {
     public void readPeriodicInputs() {
         double throttle = mController.getY(Hand.kLeft);
         double turn = mController.getX(Hand.kRight);
-        setCheesyishDrive(throttle, turn, false);
+        mIsQuickTurn = mController.getTriggerAxis(Hand.kRight) > 0.5;
+        setOpenLoop(throttle, turn);
     }
 
     public void writePeriodicOutputs() {
@@ -70,34 +67,19 @@ public class Drive extends Subsystem {
         return true;
     }
     
-    public void setOpenLoop(DriveSignal signal) {
-        mPeriodicIO.right_demand = signal.getRight();
-        mPeriodicIO.left_demand = signal.getLeft();
-    }
+    public void setOpenLoop(double throttle, double turn) {
+        mPeriodicIO.right_demand = throttle + turn;
+        mPeriodicIO.left_demand = throttle - turn;
 
-    public synchronized void setCheesyishDrive(double throttle, double wheel, boolean quickTurn) {
-        if (Util.epsilonEquals(throttle, 0.0, 0.04)) {
-            throttle = 0.0;
+        if (throttle == 0 && !mIsQuickTurn) {
+            mPeriodicIO.right_demand = 0;
+            mPeriodicIO.left_demand = 0;
         }
 
-        if (Util.epsilonEquals(wheel, 0.0, 0.035)) {
-            wheel = 0.0;
+        if (Math.abs(mPeriodicIO.right_demand) > 1.0 || Math.abs(mPeriodicIO.left_demand) > 1.0) {
+            mPeriodicIO.right_demand /= Math.max(Math.abs(mPeriodicIO.right_demand), Math.abs(mPeriodicIO.left_demand));
+            mPeriodicIO.left_demand /= Math.max(Math.abs(mPeriodicIO.right_demand), Math.abs(mPeriodicIO.left_demand));
         }
-
-        final double kWheelGain = 0.05;
-        final double kWheelNonlinearity = 0.05;
-        final double denominator = Math.sin(Math.PI / 2.0 * kWheelNonlinearity);
-        // Apply a sin function that's scaled to make it feel better.
-        if (!quickTurn) {
-            wheel = Math.sin(Math.PI / 2.0 * kWheelNonlinearity * wheel);
-            wheel = Math.sin(Math.PI / 2.0 * kWheelNonlinearity * wheel);
-            wheel = wheel / (denominator * denominator) * Math.abs(throttle);
-        }
-
-        wheel *= kWheelGain;
-        DriveSignal signal = Kinematics.inverseKinematics(new Twist2d(throttle, 0.0, wheel));
-        double scaling_factor = Math.max(1.0, Math.max(Math.abs(signal.getLeft()), Math.abs(signal.getRight())));
-        setOpenLoop(new DriveSignal(signal.getLeft() / scaling_factor, signal.getRight() / scaling_factor));
     }
     
     public void outputTelemetry() {
@@ -105,8 +87,8 @@ public class Drive extends Subsystem {
     }
 
     public void stop() {
-        mRightMaster.setNeutralMode(NeutralMode.Coast);
-        mLeftMaster.setNeutralMode(NeutralMode.Coast);
+        mLeftMaster.set(ControlMode.PercentOutput, 0);
+        mRightMaster.set(ControlMode.PercentOutput, 0);
     }
 
     public boolean isHighGear() {
